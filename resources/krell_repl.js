@@ -162,13 +162,7 @@ const loadFile = (socket, path) => {
             value: path
         },
         payload = JSON.stringify(req)+"\0";
-    if (!IS_ANDROID) {
         socket.write(payload);
-    } else {
-        pendingLoads_.push(req);
-        if(scheduled) clearTimeout(scheduled);
-        scheduled = setTimeout(() => flushLoads_(loadFileSocket), 250);
-    }
 };
 
 const exists_ = (obj, xs) => {
