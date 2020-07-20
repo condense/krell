@@ -185,59 +185,6 @@ const loadFile = (path) => {
         socketWrite(payload);
 };
 
-const exists_ = (obj, xs) => {
-    if(typeof xs == "string") {
-        xs = xs.split(".");
-    }
-    if(xs.length >= 1) {
-        let key = xs[0],
-            hasKey = obj.hasOwnProperty(key);
-        if (xs.length === 1) {
-            return hasKey;
-        } else {
-            if(hasKey) {
-                return exists_(obj[key], xs.slice(1));
-            }
-        }
-        return false;
-    } else {
-        return false;
-    }
-};
-
-const pathToIds_ = () => {
-    let pathToIds = {};
-    for(let id in goog.debugLoader_.idToPath_) {
-        let path = goog.debugLoader_.idToPath_[id];
-        if(pathToIds[path] == null) {
-            pathToIds[path] = [];
-        }
-        pathToIds[path].push(id);
-    }
-    return pathToIds;
-};
-
-const isLoaded_ = (path, index) => {
-    let ids = index[path];
-    for(let i = 0; i < ids.length; i++) {
-        if(exists_(global, ids[i])) {
-            return true;
-        }
-    }
-    return false;
-};
-
-const flushLoads_ = (socket) => {
-    let index    = pathToIds_(),
-        filtered = pendingLoads_.filter(function(req) {
-                       return !isLoaded_(req.value, index);
-                   }).map(function(req) {
-                       return JSON.stringify(req)+"\0";
-                   });
-    socketWrite(filtered.join(""));
-    pendingLoads_ = [];
-};
-
 global.CLOSURE_NO_DEPS = true;
 
 // NOTE: CLOSURE_LOAD_FILE_SYNC not needed as ClojureScript now transpiles
