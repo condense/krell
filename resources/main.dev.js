@@ -40,7 +40,7 @@ function waitForCore(cb) {
        KRELL_CACHE.has(toPath("goog/deps.js")) &&
        KRELL_CACHE.has(toPath("cljs_deps.js")) &&
        KRELL_CACHE.has(toPath("krell_repl_deps.js"))) {
-        bootstrap();
+       bootstrap();
         cb();
     } else if(typeof cljs !== 'undefined') {
         cb();
