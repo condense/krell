@@ -156,13 +156,33 @@ cacheInit();
 var loadFileSocket = null;
 var scheduled = null;
 
-const loadFile = (socket, path) => {
+var writeQueue = [];
+var writeLoopActive = false;
+
+// Ensure writes are processed in order (for android)
+const writeLoop = () => {
+    if (!writeLoopActive && writeQueue.length > 0) {
+        writeLoopActive = true;
+        payload = writeQueue.shift()
+        loadFileSocket.write(payload, undefined, () => {
+            writeLoopActive = false;
+            writeLoop();
+        });
+    }
+}
+
+const socketWrite = (payload) => {
+    writeQueue.push(payload);
+    writeLoop();
+}
+
+const loadFile = (path) => {
     let req = {
             type: "load-file",
             value: path
         },
         payload = JSON.stringify(req)+"\0";
-        socket.write(payload);
+        socketWrite(payload);
 };
 
 const exists_ = (obj, xs) => {
@@ -214,7 +234,7 @@ const flushLoads_ = (socket) => {
                    }).map(function(req) {
                        return JSON.stringify(req)+"\0";
                    });
-    socket.write(filtered.join(""));
+    socketWrite(filtered.join(""));
     pendingLoads_ = [];
 };
 
@@ -232,7 +252,7 @@ global.CLOSURE_IMPORT_SCRIPT = function(path, optContents) {
             evaluate(cached.source);
             notifyListeners({value: path});
         } else {
-            loadFile(loadFileSocket, path, optContents);
+            loadFile(path, optContents);
         }
         return true;
     }
@@ -330,7 +350,7 @@ const handleMessage = (socket, data) => {
     }
 
     if (err) {
-        socket.write(
+        socketWrite(
             JSON.stringify({
                 type: "result",
                 status: "exception",
@@ -339,7 +359,7 @@ const handleMessage = (socket, data) => {
         );
     } else {
         if (ret !== undefined && ret !== null) {
-            socket.write(
+            socketWrite(
                 JSON.stringify({
                     type: "result",
                     status: "success",
@@ -347,7 +367,7 @@ const handleMessage = (socket, data) => {
                 })+"\0"
             );
         } else {
-            socket.write(
+            socketWrite(
                 JSON.stringify({
                     type: "result",
                     status: "success",
@@ -374,6 +394,7 @@ const initSocket = (socket) => {
     var buffer = "";
     // it doesn't matter which socket we use for loads
     loadFileSocket = socket;
+    writeQueue = [];
 
     socket.on("data", data => {
         if (data[data.length - 1] !== 0) {
