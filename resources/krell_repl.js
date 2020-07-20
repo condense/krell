@@ -18,7 +18,6 @@ const evaluate = eval;
 var libLoadListeners = {};
 var reloadListeners = [];
 var cacheInvalidateListeners = [];
-var pendingLoads_ = [];
 
 // =============================================================================
 // Caching Support
@@ -154,8 +153,6 @@ cacheInit();
 // REPL Server
 
 var loadFileSocket = null;
-var scheduled = null;
-
 var writeQueue = [];
 var writeLoopActive = false;
 
